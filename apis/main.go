@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -27,11 +28,22 @@ func hello(response http.ResponseWriter, request *http.Request) {
 	fmt.Fprint(response, "Hello World, Kipptyhipptyruppyt Hundlebundleshandle")
 }
 
+func createUserEndpoint(response http.ResponseWriter, request *http.Request) {
+	response.Header().Add("content-type", "application/json")
+	var user User
+	json.NewDecoder(request.Body).Decode(&user)
+	collection := client.Database("zuri_chat").Collection("User")
+	result, _ := collection.InsertOne(ctx, user)
+	json.NewEncoder(response).Encode(result)
+
+}
+
 func main() {
 	fmt.Println("Starting Application...")
-	client, _ = mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:5580"))
+	client, _ = mongo.Connect(ctx, options.Client().ApplyURI("mongodb://127.0.0.1:27017"))
 	router := mux.NewRouter()
 	router.HandleFunc("/my-test", hello).Methods("Get")
+	router.HandleFunc("/create_user", createUserEndpoint).Methods("POST")
 	http.ListenAndServe(":8080", router)
 
 }
