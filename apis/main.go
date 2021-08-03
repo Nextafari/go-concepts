@@ -27,7 +27,6 @@ type User struct {
 var ctx, _ = context.WithTimeout(context.Background(), 10*time.Second)
 
 func mongoConnector() (*mongo.Client, error) {
-	uri := "mongodb+srv://nexta:foobar@cluster0.h9grc.mongodb.net/zuriChat?retryWrites=true&w=majority"
 
 	clientOptions := options.Client().ApplyURI(uri)
 
