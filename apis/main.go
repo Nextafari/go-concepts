@@ -17,45 +17,20 @@ import (
 )
 
 type User struct {
-	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Id        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	Firstname string             `json:"firstname,omitempty" bson:"firstname,omitempty"`
 	Lastname  string             `json:"lastname,omitempty" bson:"lastname,omitempty"`
 }
 
 // Defining mongoclient
-var client *mongo.Client
+// var client *mongo.Client
 var ctx, _ = context.WithTimeout(context.Background(), 10*time.Second)
 
-func hello(response http.ResponseWriter, request *http.Request) {
-	response.Header().Add("content-type", "application/json")
-	fmt.Fprint(response, "Hello World, Kipptyhipptyruppyt Hundlebundleshandle")
-}
+func mongoConnector() (*mongo.Client, error) {
+	uri := "mongodb+srv://nexta:foobar@cluster0.h9grc.mongodb.net/zuriChat?retryWrites=true&w=majority"
 
-func createUserEndpoint(response http.ResponseWriter, request *http.Request) {
-	response.Header().Add("content-type", "application/json")
+	clientOptions := options.Client().ApplyURI(uri)
 
-	var user *User
-	err := json.NewDecoder(request.Body).Decode(&user)
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{"message": "` + err.Error() + `"}`))
-	}
-	fmt.Println(err)
-	fmt.Printf("I am the user: %v \n", *user)
-	collection := client.Database("zuriChat").Collection("user")
-	result, err := collection.InsertOne(ctx, user)
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{"message": "` + err.Error() + `"}`))
-	}
-	json.NewEncoder(response).Encode(result)
-
-}
-
-func main() {
-	fmt.Println("Starting Application...")
-	// client options
-	clientOptions := options.Client().ApplyURI("mongodb://127.0.0.1:27017/zuriChat")
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Fatal(err)
@@ -78,8 +53,40 @@ func main() {
 	fmt.Println(databases)
 	fmt.Println("Connected to MongoDB!")
 
+	return client, nil
+}
+
+func createUserEndpoint(response http.ResponseWriter, request *http.Request) {
+	response.Header().Add("content-type", "application/json")
+
+	client, error := mongoConnector()
+
+	if error != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+	}
+
+	var user User
+	err := json.NewDecoder(request.Body).Decode(&user)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"message": "` + err.Error() + `"}`))
+	}
+	fmt.Println(err, &user)
+	fmt.Printf("I am the user: %v \n", user)
+	collection := client.Database("zuriChat").Collection("user")
+	result, err := collection.InsertOne(ctx, user)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"message": "` + err.Error() + `"}`))
+	}
+	json.NewEncoder(response).Encode(result)
+
+}
+
+func main() {
+	fmt.Println("Starting Application...")
+	// client options
 	router := mux.NewRouter()
-	router.HandleFunc("/my-test", hello).Methods("GET")
-	router.HandleFunc("/create_user", createUserEndpoint).Methods("POST")
+	router.HandleFunc("/create-user", createUserEndpoint).Methods("POST")
 	http.ListenAndServe(":8080", router)
 }
