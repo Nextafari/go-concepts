@@ -82,8 +82,11 @@ func createUserEndpoint(response http.ResponseWriter, request *http.Request) {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(`{"message": "` + err.Error() + `"}`))
 	}
+	// User with unhashed password
 	fmt.Println(user, ": is the First user")
+	// Accessing the password field in the user struct to has the password
 	user.Password = hashUserPassword(user.Password)
+	// user with hashed password
 	fmt.Println(user, ": is the Second user")
 	collection := client.Database("zuriChat").Collection("user")
 	result, err := collection.InsertOne(ctx, user)
