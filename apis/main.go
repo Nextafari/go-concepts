@@ -21,7 +21,7 @@ type User struct {
 	Id        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	Firstname string             `json:"firstname,omitempty" bson:"firstname,omitempty"`
 	Lastname  string             `json:"lastname,omitempty" bson:"lastname,omitempty"`
-	Password  string             `json:"password,omitempty bson:"password,omitempty"`
+	Password  string             `json:"password,omitempty" bson:"password,omitempty"`
 }
 
 // Defining mongoclient
