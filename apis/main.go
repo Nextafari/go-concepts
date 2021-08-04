@@ -14,19 +14,31 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
 	Id        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	Firstname string             `json:"firstname,omitempty" bson:"firstname,omitempty"`
 	Lastname  string             `json:"lastname,omitempty" bson:"lastname,omitempty"`
+	Password  string             `json:"password,omitempty" bson:"password,omitempty"`
 }
 
 // Defining mongoclient
 // var client *mongo.Client
 var ctx, _ = context.WithTimeout(context.Background(), 10*time.Second)
 
+func hashUserPassword(password string) string {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	if err != nil {
+		log.Print(err)
+	}
+	return string(bytes)
+}
+
 func mongoConnector() (*mongo.Client, error) {
+	// uri := "mongodb+srv://nexta:foobar@cluster0.h9grc.mongodb.net/zuriChat?retryWrites=true"
+	uri := DbName("DbName")
 
 	clientOptions := options.Client().ApplyURI(uri)
 
@@ -70,8 +82,12 @@ func createUserEndpoint(response http.ResponseWriter, request *http.Request) {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(`{"message": "` + err.Error() + `"}`))
 	}
-	fmt.Println(err, &user)
-	fmt.Printf("I am the user: %v \n", user)
+	// User with unhashed password
+	fmt.Println(user, ": is the First user")
+	// Accessing the password field in the user struct to has the password
+	user.Password = hashUserPassword(user.Password)
+	// user with hashed password
+	fmt.Println(user, ": is the Second user")
 	collection := client.Database("zuriChat").Collection("user")
 	result, err := collection.InsertOne(ctx, user)
 	if err != nil {
